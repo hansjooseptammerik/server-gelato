@@ -1,84 +1,180 @@
+from __future__ import annotations
+
+import json
 import logging
-from app.services.gelato import GelatoService
-from app.services.pdf_builder import PDFBuilderService
+from pathlib import Path
+from typing import Any
+
+from app.config import get_settings
+from app.services.gelato import gelato_service
+from app.services.pdf_builder import pdf_builder_service
+from app.services.storage import storage_service
 
 logger = logging.getLogger(__name__)
 
+BOOKS_INDEX_PATH = Path(__file__).resolve().parent.parent / "book_configs" / "books.json"
+
 
 class PipelineService:
-    def __init__(self):
-        self.gelato_service = GelatoService()
-        self.pdf_builder = PDFBuilderService()
+    def __init__(self) -> None:
+        self.settings = get_settings()
 
-    async def process_paid_order(self, shopify_order: dict):
-        try:
-            logger.info("Starting pipeline")
+    def _load_books_index(self) -> dict[str, Any]:
+        with open(BOOKS_INDEX_PATH, "r", encoding="utf-8") as fh:
+            return json.load(fh)
 
-            line_item = shopify_order["line_items"][0]
-            properties = line_item.get("properties", [])
+    def _load_book_config(self, path: Path) -> dict[str, Any]:
+        with open(path, "r", encoding="utf-8") as fh:
+            return json.load(fh)
 
-            images = [
-                p["value"]
-                for p in properties
-                if p.get("name", "").startswith("image_")
-            ]
+    def _find_child_name(self, line_item: dict[str, Any]) -> str | None:
+        props = line_item.get("properties") or []
+        for prop in props:
+            key = (prop.get("name") or "").strip().lower()
+            value = (prop.get("value") or "").strip()
+            if not value:
+                continue
+            if key in {"child name", "child's name", "name", "personalized_name"}:
+                return value
+        return None
 
-            if not images:
-                raise Exception("No images found in Shopify properties")
+    def _find_book_handle(self, line_item: dict[str, Any]) -> str | None:
+        props = line_item.get("properties") or []
+        for prop in props:
+            key = (prop.get("name") or "").strip().lower()
+            value = (prop.get("value") or "").strip()
+            if not value:
+                continue
+            if key in {"_personalizer_book", "personalizer_book", "book_handle", "handle"}:
+                # Shopify current flow sends the product handle with a -1 suffix on this store
+                if value.endswith("-1"):
+                    value = value[:-2]
+                return value
 
-            pdf_url = await self.pdf_builder.build_pdf(images)
-            logger.info(f"PDF created: {pdf_url}")
+        fallback = (line_item.get("handle") or "").strip()
+        if fallback:
+            return fallback
 
-            page_count = 30  # FIXED
+        return None
 
-            shipping = shopify_order["shipping_address"]
+    def _derive_page_count(self, config: dict[str, Any], book_meta: dict[str, Any]) -> int:
+        # Prefer explicit values when available
+        for key in ("gelato_page_count", "page_count"):
+            value = book_meta.get(key)
+            if isinstance(value, int) and value > 0:
+                return value
+            value = config.get(key)
+            if isinstance(value, int) and value > 0:
+                return value
 
-            product_uid = "photobooks-hardcover_pf_200x200-mm-8x8-inch_pt_170-gsm-65lb-coated-silk_cl_4-4_ccl_4-4_bt_glued-left_ct_matt-lamination_prt_1-0_cpt_130-gsm-65-lb-cover-coated-silk_ver"
+        # Fall back to the known current book size:
+        # cover + page1 + spreads 2-29 + page30 = 17 images => 30 pages
+        pages = config.get("pages") or []
+        if len(pages) == 17:
+            return 30
 
-            gelato_payload = {
-                "orderType": "order",
-                "orderReferenceId": str(shopify_order["id"]),
-                "customerReferenceId": str(shopify_order.get("customer", {}).get("id") or shopify_order["id"]),
-                "currency": "USD",
-                "items": [
+        # Generic fallback: assume first and last are single pages and middle images are spreads
+        if len(pages) >= 3:
+            return max(1, 2 * (len(pages) - 2) + 2)
+
+        return len(pages)
+
+    def _build_shipping_address(self, order: dict[str, Any]) -> dict[str, Any]:
+        shipping = order.get("shipping_address") or {}
+        first_name = shipping.get("first_name") or order.get("customer", {}).get("first_name") or ""
+        last_name = shipping.get("last_name") or order.get("customer", {}).get("last_name") or ""
+        email = order.get("email") or order.get("contact_email") or ""
+        return {
+            "companyName": shipping.get("company") or "",
+            "firstName": first_name,
+            "lastName": last_name,
+            "addressLine1": shipping.get("address1") or "",
+            "addressLine2": shipping.get("address2") or "",
+            "city": shipping.get("city") or "",
+            "state": shipping.get("province_code") or shipping.get("province") or "",
+            "postCode": shipping.get("zip") or "",
+            "country": shipping.get("country_code") or shipping.get("country") or "",
+            "email": email,
+            "phone": shipping.get("phone") or order.get("phone") or "",
+        }
+
+    async def process_paid_order(self, order: dict[str, Any]) -> dict[str, Any]:
+        logger.info("Starting pipeline")
+        books_index = self._load_books_index()
+        items_payload: list[dict[str, Any]] = []
+
+        for line_item in order.get("line_items", []):
+            handle = self._find_book_handle(line_item) or ""
+            logger.info("Resolved product handle: %s", handle)
+
+            if self.settings.allowed_product_handles and handle not in self.settings.allowed_product_handles:
+                logger.info("Skipping line item with disallowed handle: %s", handle)
+                continue
+
+            book_meta = books_index.get(handle)
+            if not book_meta:
+                logger.info("Skipping line item with unknown handle: %s", handle)
+                continue
+
+            child_name = self._find_child_name(line_item)
+            if not child_name:
+                logger.info("Skipping line item without child name: %s", line_item.get("id"))
+                continue
+
+            config_path = Path(__file__).resolve().parent.parent / "book_configs" / book_meta["config_file"]
+            book_config = self._load_book_config(config_path)
+            page_count = self._derive_page_count(book_config, book_meta)
+
+            pdf_path = storage_service.next_pdf_path(
+                prefix=f"order-{order.get('id')}-item-{line_item.get('id')}"
+            )
+
+            await pdf_builder_service.build_book_pdf(
+                child_name=child_name,
+                config_path=config_path,
+                output_path=pdf_path,
+            )
+            pdf_url = storage_service.public_url_for(pdf_path)
+            logger.info("PDF created: %s", pdf_url)
+            logger.info("Gelato pageCount: %s", page_count)
+
+            item_payload = {
+                "itemReferenceId": str(line_item.get("id")),
+                "productUid": book_meta["gelato_product_uid"],
+                "files": [
                     {
-                        "itemReferenceId": str(line_item["id"]),
-                        "productUid": product_uid,
-                        "files": [
-                            {
-                                "type": "default",
-                                "url": pdf_url,
-                            }
-                        ],
-                        "pageCount": page_count,
-                        "quantity": 1,
+                        "type": "default",
+                        "url": pdf_url,
                     }
                 ],
-                "shipmentMethodUid": "standard",
-                "shippingAddress": {
-                    "firstName": shipping["first_name"],
-                    "lastName": shipping["last_name"],
-                    "addressLine1": shipping["address1"],
-                    "addressLine2": shipping.get("address2", ""),
-                    "city": shipping["city"],
-                    "state": shipping.get("province", ""),
-                    "postCode": shipping["zip"],
-                    "country": shipping["country_code"],
-                    "email": shopify_order["email"],
-                },
+                "pageCount": page_count,
+                "quantity": int(line_item.get("quantity", 1)),
             }
+            items_payload.append(item_payload)
 
-            logger.info(f"Gelato payload: {gelato_payload}")
+        if not items_payload:
+            logger.info("No printable personalized items found in order %s", order.get("id"))
+            return {"skipped": True, "reason": "no printable personalized items"}
 
-            result = await self.gelato_service.create_order(gelato_payload)
+        gelato_payload = {
+            "orderType": "order",
+            "orderReferenceId": str(order.get("id")),
+            "customerReferenceId": str(
+                order.get("customer", {}).get("id") or order.get("email") or order.get("id")
+            ),
+            "currency": order.get("currency") or self.settings.GELATO_CURRENCY,
+            "items": items_payload,
+            "shipmentMethodUid": self.settings.GELATO_SHIPMENT_METHOD_UID,
+            "shippingAddress": self._build_shipping_address(order),
+        }
+        logger.info("Gelato payload: %s", gelato_payload)
 
-            logger.info(f"Gelato success: {result}")
-
-            return result
-
-        except Exception as e:
-            logger.exception(f"Pipeline failed: {e}")
-            raise
+        result = await gelato_service.create_order(gelato_payload)
+        return {
+            "skipped": False,
+            "gelato_request": gelato_payload,
+            "gelato_response": result,
+        }
 
 
 pipeline_service = PipelineService()
