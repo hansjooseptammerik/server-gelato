@@ -1,0 +1,266 @@
+{
+  "book_key": "god-loves-you-so-so-much-personalized-children-s-book",
+  "title": "God Loves You So, So Much",
+  "notes": [
+    "Replace every image_url with the real Shopify Files CDN URL for that page/spread.",
+    "Replace font_path values if you upload custom TTF files into app/fonts/.",
+    "Percentages are seed values only. Keep tuning these until the print PDF matches your preview exactly."
+  ],
+  "pages": [
+    {
+      "key": "01_cover_back_and_front",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/01_cover_back_and_front.jpg?v=1775654016",
+      "text": {
+        "font_name": "Helvetica-Bold",
+        "font_path": null,
+        "color": "#FFFFFF",
+        "font_size": 34,
+        "min_font_size": 16,
+        "x_percent": 73.7,
+        "y_percent": 65.0,
+        "width_percent": 36.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "02_page_1",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/02_page_1.jpg?v=1775654012",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 40,
+        "min_font_size": 18,
+        "x_percent": 49.0,
+        "y_percent": 23.2,
+        "width_percent": 34.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "03_page_2_3",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/03_page_2_3.jpg?v=1775654015",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 75.0,
+        "y_percent": 20.1,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "04_page_4_5",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/04_page_4_5.jpg?v=1775654015",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 24.0,
+        "y_percent": 26.3,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "05_page_6_7",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/05_page_6_7.jpg?v=1775654003",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 75.2,
+        "y_percent": 27.3,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "06_page_8_9",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/06_page_8_9.jpg?v=1775654004",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 22.8,
+        "y_percent": 13.1,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "07_page_10_11",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/07_page_10_11.jpg?v=1775654003",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 74.4,
+        "y_percent": 17.3,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "08_page_12_13",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/08_page_12_13.jpg?v=1775654014",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 27,
+        "min_font_size": 14,
+        "x_percent": 75.3,
+        "y_percent": 18.7,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "09_page_14_15",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/09_page_14_15.jpg?v=1775654014",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 27,
+        "min_font_size": 14,
+        "x_percent": 23.9,
+        "y_percent": 16.5,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "10_page_16_17",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/10_page_16_17.jpg?v=1775654016",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 27,
+        "min_font_size": 14,
+        "x_percent": 76.9,
+        "y_percent": 19.3,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "11_page_18_19",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/11_page_18_19.jpg?v=1775654007",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 75.0,
+        "y_percent": 41.2,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "12_page_20_21",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/12_page_20_21.jpg?v=1775654017",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 25,
+        "min_font_size": 14,
+        "x_percent": 22.8,
+        "y_percent": 17.7,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "13_page_22_23",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/13_page_22_23.jpg?v=1775654017",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 27,
+        "min_font_size": 14,
+        "x_percent": 75.2,
+        "y_percent": 47.0,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "14_page_24_25",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/14_page_24_25.jpg?v=1775654016",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 76.2,
+        "y_percent": 26.0,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "15_page_26_27",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/15_page_26_27.jpg?v=1775654014",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 24.9,
+        "y_percent": 19.0,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "16_page_28_29",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/16_page_28_29.jpg?v=1775654015",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#4D3516",
+        "font_size": 28,
+        "min_font_size": 14,
+        "x_percent": 75.3,
+        "y_percent": 12.3,
+        "width_percent": 18.0,
+        "shrink_to_fit": true
+      }
+    },
+    {
+      "key": "17_page_30",
+      "image_url": "https://cdn.shopify.com/s/files/1/1036/9191/1509/files/17_page_30.jpg?v=1775654017",
+      "text": {
+        "font_name": "PlayfairDisplay-Italic",
+        "font_path": "app/fonts/PlayfairDisplay-Italic.ttf",
+        "color": "#FFFFFF",
+        "font_size": 30,
+        "min_font_size": 16,
+        "x_percent": 49.0,
+        "y_percent": 12.8,
+        "width_percent": 46.0,
+        "shrink_to_fit": true
+      }
+    }
+  ]
+}

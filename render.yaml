@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: server-gelato
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    disk:
+      name: pdf-storage
+      mountPath: /var/data/book-pdfs
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: STORAGE_DIR
+        value: /var/data/book-pdfs
+      - key: SHOPIFY_API_VERSION
+        value: 2026-04
+      - key: GELATO_API_BASE
+        value: https://order.gelatoapis.com
+      - key: GELATO_SHIPMENT_METHOD_UID
+        value: standard
+      - key: DRY_RUN
+        value: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: SHOPIFY_SHOP
+        sync: false
+      - key: SHOPIFY_CLIENT_ID
+        sync: false
+      - key: SHOPIFY_CLIENT_SECRET
+        sync: false
+      - key: SHOPIFY_WEBHOOK_SECRET
+        sync: false
+      - key: GELATO_API_KEY
+        sync: false
+      - key: GELATO_CURRENCY
+        sync: false
+      - key: ALLOWED_PRODUCT_HANDLES
+        sync: false
