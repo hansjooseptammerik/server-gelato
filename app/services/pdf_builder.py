@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import json
 import logging
 from io import BytesIO
@@ -67,6 +68,26 @@ class PDFBuilderService:
             response.raise_for_status()
             return response.content
 
+    def _prepare_embedded_image(self, image_bytes: bytes) -> tuple[BytesIO, int, int]:
+        # Convert to RGB and re-save as optimized JPEG.
+        # This keeps the PDF dramatically smaller than embedding raw bitmaps.
+        with Image.open(BytesIO(image_bytes)) as img:
+            rgb = img.convert("RGB")
+            width_px, height_px = rgb.size
+
+            jpg_buffer = BytesIO()
+            rgb.save(
+                jpg_buffer,
+                format="JPEG",
+                quality=82,
+                optimize=True,
+                progressive=True,
+            )
+            rgb.close()
+
+        jpg_buffer.seek(0)
+        return jpg_buffer, width_px, height_px
+
     async def build_book_pdf(
         self,
         *,
@@ -84,19 +105,23 @@ class PDFBuilderService:
             for idx, page in enumerate(pages):
                 image_url = page['image_url']
                 image_bytes = await self._download_image_bytes(image_url)
-                image = Image.open(BytesIO(image_bytes)).convert('RGB')
-                width_px, height_px = image.size
+                embedded_image, width_px, height_px = self._prepare_embedded_image(image_bytes)
 
                 if pdf is None:
                     pdf = canvas.Canvas(str(output_path), pagesize=(width_px, height_px))
+                    pdf.setPageCompression(1)
                 else:
                     pdf.setPageSize((width_px, height_px))
 
-                pdf.drawImage(ImageReader(image), 0, 0, width=width_px, height=height_px)
+                pdf.drawImage(ImageReader(embedded_image), 0, 0, width=width_px, height=height_px)
 
                 text_cfg = page.get('text')
                 if text_cfg and child_name:
                     await self._draw_name(pdf, child_name, text_cfg, width_px, height_px)
+
+                embedded_image.close()
+                del image_bytes
+                gc.collect()
 
                 if idx < len(pages) - 1:
                     pdf.showPage()
