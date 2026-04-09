@@ -30,8 +30,27 @@ class PipelineService:
             value = (prop.get('value') or '').strip()
             if not value:
                 continue
-            if key in {'child name', 'child\'s name', 'name', 'personalized_name'}:
+            if key in {'child name', "child's name", 'name', 'personalized_name'}:
                 return value
+        return None
+
+    def _find_book_handle(self, line_item: dict[str, Any]) -> str | None:
+        props = line_item.get('properties') or []
+        for prop in props:
+            key = (prop.get('name') or '').strip().lower()
+            value = (prop.get('value') or '').strip()
+            if not value:
+                continue
+
+            if key in {'_personalizer_book', 'personalizer_book', 'book_handle', 'handle'}:
+                if value.endswith('-1'):
+                    value = value[:-2]
+                return value
+
+        fallback = (line_item.get('handle') or '').strip()
+        if fallback:
+            return fallback
+
         return None
 
     def _build_shipping_address(self, order: dict[str, Any]) -> dict[str, Any]:
@@ -58,9 +77,12 @@ class PipelineService:
         items_payload: list[dict[str, Any]] = []
 
         for line_item in order.get('line_items', []):
-            handle = line_item.get('handle') or ''
+            handle = self._find_book_handle(line_item) or ''
+
             if self.settings.allowed_product_handles and handle not in self.settings.allowed_product_handles:
+                logger.info('Skipping line item with disallowed handle: %s', handle)
                 continue
+
             book_meta = books_index.get(handle)
             if not book_meta:
                 logger.info('Skipping line item with unknown handle: %s', handle)
@@ -73,12 +95,15 @@ class PipelineService:
 
             config_path = Path(__file__).resolve().parent.parent / 'book_configs' / book_meta['config_file']
             pdf_path = storage_service.next_pdf_path(prefix=f"order-{order.get('id')}-item-{line_item.get('id')}")
+
             await pdf_builder_service.build_book_pdf(
                 child_name=child_name,
                 config_path=config_path,
                 output_path=pdf_path,
             )
+
             pdf_url = storage_service.public_url_for(pdf_path)
+
             item_payload = {
                 'itemReferenceId': str(line_item.get('id')),
                 'productUid': book_meta['gelato_product_uid'],
@@ -90,6 +115,7 @@ class PipelineService:
                 ],
                 'quantity': int(line_item.get('quantity', 1)),
             }
+
             items_payload.append(item_payload)
 
         if not items_payload:
@@ -105,7 +131,9 @@ class PipelineService:
             'shipmentMethodUid': self.settings.GELATO_SHIPMENT_METHOD_UID,
             'shippingAddress': self._build_shipping_address(order),
         }
+
         result = await gelato_service.create_order(gelato_payload)
+
         return {
             'skipped': False,
             'gelato_request': gelato_payload,
