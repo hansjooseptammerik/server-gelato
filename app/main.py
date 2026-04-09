@@ -10,6 +10,9 @@ from app.api.webhooks import router as webhooks_router
 from app.config import get_settings
 from app.services.storage import storage_service
 
+import os
+print("DEBUG SHOPIFY_WEBHOOK_SECRET =", os.getenv("SHOPIFY_WEBHOOK_SECRET"))
+
 settings = get_settings()
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 
