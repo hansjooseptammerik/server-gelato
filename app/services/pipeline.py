@@ -46,7 +46,6 @@ class PipelineService:
             if not value:
                 continue
             if key in {"_personalizer_book", "personalizer_book", "book_handle", "handle"}:
-                # Shopify current flow sends the product handle with a -1 suffix on this store
                 if value.endswith("-1"):
                     value = value[:-2]
                 return value
@@ -58,7 +57,6 @@ class PipelineService:
         return None
 
     def _derive_page_count(self, config: dict[str, Any], book_meta: dict[str, Any]) -> int:
-        # Prefer explicit values when available
         for key in ("gelato_page_count", "page_count"):
             value = book_meta.get(key)
             if isinstance(value, int) and value > 0:
@@ -67,17 +65,15 @@ class PipelineService:
             if isinstance(value, int) and value > 0:
                 return value
 
-        # Fall back to the known current book size:
-        # cover + page1 + spreads 2-29 + page30 = 17 images => 30 pages
         pages = config.get("pages") or []
+
+        # Current book structure:
+        # 1 cover spread + blank inside front + page 1 + paired spreads + page 30 + blank inside back
+        # For the current 17-image config this becomes 33 PDF pages.
         if len(pages) == 17:
-            return 30
+            return 33
 
-        # Generic fallback: assume first and last are single pages and middle images are spreads
-        if len(pages) >= 3:
-            return max(1, 2 * (len(pages) - 2) + 2)
-
-        return len(pages)
+        return max(1, len(pages))
 
     def _build_shipping_address(self, order: dict[str, Any]) -> dict[str, Any]:
         shipping = order.get("shipping_address") or {}
