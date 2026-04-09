@@ -17,6 +17,8 @@ from app.utils.page_text import fit_font_size
 
 logger = logging.getLogger(__name__)
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
 
 class PDFBuilderService:
     def __init__(self) -> None:
@@ -26,12 +28,36 @@ class PDFBuilderService:
         with open(path, 'r', encoding='utf-8') as fh:
             return json.load(fh)
 
+    def _resolve_font_path(self, font_path: str | None) -> str | None:
+        if not font_path:
+            return None
+
+        candidate = Path(font_path)
+        if candidate.is_absolute():
+            return str(candidate)
+
+        project_relative = PROJECT_ROOT / candidate
+        if project_relative.exists():
+            return str(project_relative)
+
+        service_relative = Path(__file__).resolve().parent / candidate
+        if service_relative.exists():
+            return str(service_relative)
+
+        app_relative = Path(__file__).resolve().parent.parent / candidate
+        if app_relative.exists():
+            return str(app_relative)
+
+        return str(project_relative)
+
     def _register_font_if_needed(self, font_name: str, font_path: str | None) -> str:
         if not font_path:
             return font_name
         if font_name in self._font_cache:
             return font_name
-        pdfmetrics.registerFont(TTFont(font_name, font_path))
+
+        resolved_font_path = self._resolve_font_path(font_path)
+        pdfmetrics.registerFont(TTFont(font_name, resolved_font_path))
         self._font_cache.add(font_name)
         return font_name
 
