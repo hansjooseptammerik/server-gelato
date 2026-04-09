@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -56,24 +57,38 @@ class PipelineService:
 
         return None
 
-    def _derive_page_count(self, config: dict[str, Any], book_meta: dict[str, Any]) -> int:
-        for key in ("gelato_page_count", "page_count"):
-            value = book_meta.get(key)
-            if isinstance(value, int) and value > 0:
-                return value
-            value = config.get(key)
-            if isinstance(value, int) and value > 0:
-                return value
+    def _derive_inner_page_count(self, config: dict[str, Any], book_meta: dict[str, Any]) -> int:
+        explicit = book_meta.get("gelato_page_count")
+        if isinstance(explicit, int) and explicit > 0:
+            return explicit
 
-        pages = config.get("pages") or []
+        total = 0
+        for page in config.get("pages", []):
+            image_name = (page.get("image_name") or Path(page.get("image_url", "")).name).lower()
 
-        # Current book structure:
-        # 1 cover spread + blank inside front + page 1 + paired spreads + page 30 + blank inside back
-        # For the current 17-image config this becomes 33 PDF pages.
-        if len(pages) == 17:
-            return 33
+            if "cover" in image_name:
+                continue
 
-        return max(1, len(pages))
+            spread_match = re.search(r"page_(\d+)_(\d+)", image_name)
+            if spread_match:
+                start = int(spread_match.group(1))
+                end = int(spread_match.group(2))
+                if end >= start:
+                    total += end - start + 1
+                continue
+
+            single_match = re.search(r"page_(\d+)", image_name)
+            if single_match:
+                total += 1
+
+        if total > 0:
+            return total
+
+        fallback = book_meta.get("page_count") or config.get("page_count")
+        if isinstance(fallback, int) and fallback > 0:
+            return fallback
+
+        raise ValueError("Could not derive Gelato inner page count from config")
 
     def _build_shipping_address(self, order: dict[str, Any]) -> dict[str, Any]:
         shipping = order.get("shipping_address") or {}
@@ -119,7 +134,7 @@ class PipelineService:
 
             config_path = Path(__file__).resolve().parent.parent / "book_configs" / book_meta["config_file"]
             book_config = self._load_book_config(config_path)
-            page_count = self._derive_page_count(book_config, book_meta)
+            inner_page_count = self._derive_inner_page_count(book_config, book_meta)
 
             pdf_path = storage_service.next_pdf_path(
                 prefix=f"order-{order.get('id')}-item-{line_item.get('id')}"
@@ -132,7 +147,7 @@ class PipelineService:
             )
             pdf_url = storage_service.public_url_for(pdf_path)
             logger.info("PDF created: %s", pdf_url)
-            logger.info("Gelato pageCount: %s", page_count)
+            logger.info("Gelato inner pageCount: %s", inner_page_count)
 
             item_payload = {
                 "itemReferenceId": str(line_item.get("id")),
@@ -143,7 +158,7 @@ class PipelineService:
                         "url": pdf_url,
                     }
                 ],
-                "pageCount": page_count,
+                "pageCount": inner_page_count,
                 "quantity": int(line_item.get("quantity", 1)),
             }
             items_payload.append(item_payload)
