@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import os
-print("DEBUG SHOPIFY_WEBHOOK_SECRET =", os.getenv("SHOPIFY_WEBHOOK_SECRET"))
-
 import logging
 from pathlib import Path
 
